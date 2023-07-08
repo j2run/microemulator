@@ -11,8 +11,16 @@ int maxx = 1;
 int maxy = 1;
 int bpp = 4;
 char* tmpfb;
+jobject globalKeyboard, globalMouse;
 
-void dirtyCopy(const char* data, int width, int height, int nbytes) {
+struct EKey {
+    int key;
+    bool down;
+};
+EKey* listEventKey = nullptr;
+int sizeKey = 0;
+
+static void dirtyCopy(const char* data, int width, int height, int nbytes) {
     const char* framebuffer = server->frameBuffer;
     char* modifiedFramebuffer = server->frameBuffer;
     
@@ -26,7 +34,36 @@ void dirtyCopy(const char* data, int width, int height, int nbytes) {
     }
 }
 
+static void callEvent(JNIEnv* env) {
+    jclass callbackClass = env->GetObjectClass(globalKeyboard);
+    jmethodID callbackMethod = env->GetMethodID(callbackClass, "hookKeyPress", "(IZ)V");
+    for(int i=0; i < sizeKey; i++) {
+        env->CallVoidMethod(globalKeyboard, callbackMethod, listEventKey[i].key, listEventKey[i].down);
+    }
+    sizeKey = 0;
+}
+
 static enum rfbNewClientAction newClient(rfbClientPtr cl) {
+}
+
+static void keyCallback(rfbBool down, rfbKeySym keySym, rfbClientPtr client)
+{
+    (void)(client);
+    // std::cout << keySym << " - " << +down << std::endl;
+    if (keySym > 65000) {
+        keySym -= 65324;
+    } else if (keySym >= 97 && keySym <= 122) {
+        keySym -= 32;
+    }
+    listEventKey[sizeKey].key = keySym; 
+    listEventKey[sizeKey].down = down; 
+    sizeKey++;
+}
+
+static void mouseCallback(int buttonMask, int x, int y, rfbClientPtr client)
+{
+    (void)(client);
+    std::cout << +buttonMask << " - " << x << " - " << y << std::endl;
 }
 
 static jboolean hasConnection() {
@@ -49,7 +86,10 @@ static void *thr_handle(void *args)
     server->frameBuffer= (char*)malloc(maxx*maxy*bpp);
     server->alwaysShared = TRUE;
     server->newClientHook = newClient;
+    server->ptrAddEvent = mouseCallback;
+    server->kbdAddEvent = keyCallback;
     rfbInitServer(server);
+    // rfbRunEventLoop(server,-1,FALSE);
 }
 
 extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDisplay_updateProcess(JNIEnv* env, jobject obj) {
@@ -103,18 +143,29 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDi
     jbyte* pixelData = env->GetByteArrayElements(pixels, NULL);
     char* byteData = (char*)pixelData;
     dirtyCopy(byteData, width,  height, sizeof(int));
-    rfbProcessEvents(server, 0);
+    while (rfbProcessEvents(server, 0)) {
+    }
+    callEvent(env);
+
     env->ReleaseByteArrayElements(pixels, pixelData, 0);
     return hasConnection();
 }
 
-
-
-extern "C" JNIEXPORT void JNICALL Java_org_microemu_app_Main_initNative(JNIEnv *, jobject) {
+extern "C" JNIEXPORT void JNICALL Java_org_microemu_app_Main_initNative(JNIEnv *env, jobject) {
     std::cout << "Hello J2RUN!" << std::endl;
-
+    listEventKey = new EKey[100];
     int ret;
     if (ret = pthread_create(&thread_id, NULL, &thr_handle, NULL)) {
         return;
     }
+}
+
+extern "C" JNIEXPORT void JNICALL Java_org_microemu_app_ui_swing_SwingDeviceComponent_setObject(JNIEnv *env, jobject obj) {
+    std::cout << "setObject keyboard!" << std::endl;
+    globalKeyboard = env->NewGlobalRef(obj);
+}
+
+extern "C" JNIEXPORT void JNICALL Java_org_microemu_app_ui_swing_SwingDisplayComponent_setObject(JNIEnv *env, jobject obj) {
+    std::cout << "setObject mouse!" << std::endl;
+    globalMouse = env->NewGlobalRef(obj);
 }

@@ -258,7 +258,12 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 		addMouseListener(mouseListener);
 		addMouseMotionListener(mouseMotionListener);
 		addMouseWheelListener(mouseWheelListener);
+
+		setObject();
 	}
+
+	// yuh ---
+	private native void setObject();
 
 	public void init() {
 		synchronized (this) {

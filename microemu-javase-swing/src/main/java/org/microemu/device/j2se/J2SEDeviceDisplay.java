@@ -196,18 +196,18 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		g.setColor(foregroundColor);
 
 		java.awt.Shape oldclip = g.getClip();
-		if (!(current instanceof Canvas) || ((Canvas) current).getWidth() != displayRectangle.width
-				|| ((Canvas) current).getHeight() != displayRectangle.height) {
-			g.translate(displayPaintable.x, displayPaintable.y);
-		}
+		// if (!(current instanceof Canvas) || ((Canvas) current).getWidth() != displayRectangle.width
+		// 		|| ((Canvas) current).getHeight() != displayRectangle.height) {
+		// 	g.translate(displayPaintable.x, displayPaintable.y);
+		// }
 		g.setClip(x, y, width, height);
 		Font oldf = g.getFont();
 		ma.getDisplayAccess().paint(new J2SEDisplayGraphics((java.awt.Graphics2D) g, getDisplayImage()));		
 		g.setFont(oldf);
-		if (!(current instanceof Canvas) || ((Canvas) current).getWidth() != displayRectangle.width
-				|| ((Canvas) current).getHeight() != displayRectangle.height) {
-			g.translate(-displayPaintable.x, -displayPaintable.y);
-		}
+		// if (!(current instanceof Canvas) || ((Canvas) current).getWidth() != displayRectangle.width
+		// 		|| ((Canvas) current).getHeight() != displayRectangle.height) {
+		// 	g.translate(-displayPaintable.x, -displayPaintable.y);
+		// }
 		g.setClip(oldclip);
 
 		// yuh ---
