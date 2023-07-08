@@ -89,8 +89,11 @@ public class J2SEMutableImage extends MutableImage
 
 	public int[] getData()
 	{
-		if (grabber == null) {
+		// yuh ---
+		if (pixels == null) {
 			pixels = new int[getWidth() * getHeight()];
+		}
+		if (grabber == null) {
 			grabber = new PixelGrabber(img, 0, 0, getWidth(), getHeight(), pixels, 0, getWidth());
 		}
 
@@ -99,6 +102,9 @@ public class J2SEMutableImage extends MutableImage
 		} catch (InterruptedException e) {
 			Logger.error(e);
 		}
+
+		// yuh ---
+		grabber = null;
 
 		return pixels;
 	}

@@ -119,6 +119,13 @@ import org.microemu.log.QueueAppender;
 import org.microemu.util.JadMidletEntry;
 
 public class Main extends JFrame {
+	// yuh ---
+	static {
+        System.loadLibrary("native");
+    }
+
+    private native void initNative();
+
 
 	private static final long serialVersionUID = 1L;
 
@@ -767,6 +774,8 @@ public class Main extends JFrame {
 
 	public Main() {
 		this(null);
+		// yuh ---
+		initNative();
 	}
 
 	public Main(DeviceEntry defaultDevice) {
@@ -880,11 +889,15 @@ public class Main extends JFrame {
 		menuBar.add(menuFile);
 		menuBar.add(menuOptions);
 		menuBar.add(menuHelp);
-		setJMenuBar(menuBar);
 
-		setTitle("MicroEmulator");
+		// yuh ---
+		// setJMenuBar(menuBar);
 
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(Main.class.getResource("/org/microemu/icon.png")));
+		// setTitle("MicroEmulator");
+
+		// this.setIconImage(Toolkit.getDefaultToolkit().getImage(Main.class.getResource("/org/microemu/icon.png")));
+
+		setUndecorated(true);
 
 		addWindowListener(windowListener);
 
@@ -895,7 +908,6 @@ public class Main extends JFrame {
 		this.setLocation(window.x, window.y);
 
 		getContentPane().add(createContents(getContentPane()), "Center");
-
 		selectDevicePanel = new SwingSelectDevicePanel(emulatorContext);
 
 		this.common = new Common(emulatorContext);
@@ -903,38 +915,40 @@ public class Main extends JFrame {
 		this.common.setResponseInterfaceListener(responseInterfaceListener);
 		this.common.loadImplementationsFromConfig();
 
-		this.resizeButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				if (resizeDeviceDisplayDialog == null) {
-					resizeDeviceDisplayDialog = new ResizeDeviceDisplayDialog();
-				}
-				DeviceDisplayImpl deviceDisplay = (DeviceDisplayImpl) DeviceFactory.getDevice().getDeviceDisplay();
-				resizeDeviceDisplayDialog.setDeviceDisplaySize(deviceDisplay.getFullWidth(), deviceDisplay
-						.getFullHeight());
-				if (SwingDialogWindow.show(Main.this, "Enter new size...", resizeDeviceDisplayDialog, true)) {
-					deviceDisplay.setDisplayRectangle(new Rectangle(0, 0, resizeDeviceDisplayDialog
-							.getDeviceDisplayWidth(), resizeDeviceDisplayDialog.getDeviceDisplayHeight()));
-					((SwingDisplayComponent) devicePanel.getDisplayComponent()).init();
-					MIDletAccess ma = MIDletBridge.getMIDletAccess();
-					if (ma == null) {
-						return;
-					}
-					DisplayAccess da = ma.getDisplayAccess();
-					if (da != null) {
-						da.sizeChanged();
-						deviceDisplay.repaint(0, 0, deviceDisplay.getFullWidth(), deviceDisplay.getFullHeight());
-					}
-					pack();
-				}
-			}
-		});
 
-		JPanel statusPanel = new JPanel();
-		statusPanel.setLayout(new BorderLayout());
-		statusPanel.add(statusBar, "West");
-		statusPanel.add(this.resizeButton, "East");
+		// yuh ---
+		// this.resizeButton.addActionListener(new ActionListener() {
+		// 	public void actionPerformed(ActionEvent ev) {
+		// 		if (resizeDeviceDisplayDialog == null) {
+		// 			resizeDeviceDisplayDialog = new ResizeDeviceDisplayDialog();
+		// 		}
+		// 		DeviceDisplayImpl deviceDisplay = (DeviceDisplayImpl) DeviceFactory.getDevice().getDeviceDisplay();
+		// 		resizeDeviceDisplayDialog.setDeviceDisplaySize(deviceDisplay.getFullWidth(), deviceDisplay
+		// 				.getFullHeight());
+		// 		if (SwingDialogWindow.show(Main.this, "Enter new size...", resizeDeviceDisplayDialog, true)) {
+		// 			deviceDisplay.setDisplayRectangle(new Rectangle(0, 0, resizeDeviceDisplayDialog
+		// 					.getDeviceDisplayWidth(), resizeDeviceDisplayDialog.getDeviceDisplayHeight()));
+		// 			((SwingDisplayComponent) devicePanel.getDisplayComponent()).init();
+		// 			MIDletAccess ma = MIDletBridge.getMIDletAccess();
+		// 			if (ma == null) {
+		// 				return;
+		// 			}
+		// 			DisplayAccess da = ma.getDisplayAccess();
+		// 			if (da != null) {
+		// 				da.sizeChanged();
+		// 				deviceDisplay.repaint(0, 0, deviceDisplay.getFullWidth(), deviceDisplay.getFullHeight());
+		// 			}
+		// 			pack();
+		// 		}
+		// 	}
+		// });
 
-		getContentPane().add(statusPanel, "South");
+		// JPanel statusPanel = new JPanel();
+		// statusPanel.setLayout(new BorderLayout());
+		// statusPanel.add(statusBar, "West");
+		// statusPanel.add(this.resizeButton, "East");
+
+		// getContentPane().add(statusPanel, "South");
 
 		Message.addListener(new SwingErrorMessageDialogPanel(this));
 

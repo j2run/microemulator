@@ -111,6 +111,10 @@ public class Launcher extends MIDlet implements CommandListener {
 		}
 
 		Display.getDisplay(this).setCurrent(menuList);
+
+		// yuh ---
+		// auto play middle one
+		common.initMIDlet(true);
 	}
 
 	public void commandAction(Command c, Displayable d) {

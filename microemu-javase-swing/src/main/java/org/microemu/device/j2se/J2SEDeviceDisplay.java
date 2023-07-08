@@ -65,6 +65,10 @@ import org.microemu.device.impl.Rectangle;
 import org.microemu.device.impl.Shape;
 import org.microemu.device.impl.SoftButton;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+
 public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 	EmulatorContext context;
 
@@ -169,6 +173,12 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		}
 	}
 
+	// yuh ---
+	private native boolean drawPixels(byte[] pixcels, int width, int height);
+	// private native boolean drawIntPixels(int[] pixcels, int width, int height);
+	private native boolean updateProcess();
+	private boolean hasConnection = false;
+
 	public void paintDisplayable(Graphics g, int x, int y, int width, int height) {
 		MIDletAccess ma = MIDletBridge.getMIDletAccess();
 		if (ma == null) {
@@ -192,13 +202,34 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		}
 		g.setClip(x, y, width, height);
 		Font oldf = g.getFont();
-		ma.getDisplayAccess().paint(new J2SEDisplayGraphics((java.awt.Graphics2D) g, getDisplayImage()));
+		ma.getDisplayAccess().paint(new J2SEDisplayGraphics((java.awt.Graphics2D) g, getDisplayImage()));		
 		g.setFont(oldf);
 		if (!(current instanceof Canvas) || ((Canvas) current).getWidth() != displayRectangle.width
 				|| ((Canvas) current).getHeight() != displayRectangle.height) {
 			g.translate(-displayPaintable.x, -displayPaintable.y);
 		}
 		g.setClip(oldclip);
+
+		// yuh ---
+		if (hasConnection) {
+			int[] pixels = getDisplayImage().getData();
+			byte[] arr = new byte[pixels.length * 4];
+			int pixel;
+			for (int i = 0; i < pixels.length; i++) {
+				pixel = pixels[i];
+				arr[i * 4 + 0] = (byte)((pixel >> 16) & 0xFF);
+				arr[i * 4 + 1] = (byte)((pixel >> 8) & 0xFF);
+				arr[i * 4 + 2] = (byte)( pixel & 0xFF);
+				arr[i * 4 + 3] = (byte)((pixel >> 24) & 0xFF);
+			}
+			hasConnection = drawPixels(arr, width, height);
+
+			// int[] pixels = getDisplayImage().getData();
+			// hasConnection = drawIntPixels(pixels, width, height);
+		} else {
+			hasConnection = updateProcess();
+		}
+
 	}
 
 	public void repaint(int x, int y, int width, int height) {
