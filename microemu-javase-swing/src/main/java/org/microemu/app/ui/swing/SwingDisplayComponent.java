@@ -265,6 +265,24 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 	// yuh ---
 	private native void setObject();
 
+	private boolean isMouseDown = false;
+	private void hookMouse(int x, int y, int mask) {
+		// System.out.println(x);
+		// System.out.println(y);
+		// System.out.println(mask);
+
+		MouseEvent mouseEvent = new MouseEvent(this, 0, 0, 0, x, y, 0, false, mask);
+		if (mask > 0) {
+			isMouseDown = true;
+			mouseListener.mousePressed(mouseEvent);
+		} else {
+			if (isMouseDown) {
+				mouseListener.mouseReleased(mouseEvent);
+				isMouseDown = false;
+			}
+		}
+	}
+
 	public void init() {
 		synchronized (this) {
 			displayImage = null;

@@ -17,8 +17,15 @@ struct EKey {
     int key;
     bool down;
 };
+struct EMouse {
+    int x;
+    int y;
+    int mask;
+};
 EKey* listEventKey = nullptr;
+EMouse* listEventMouse = nullptr;
 int sizeKey = 0;
+int sizeMouse = 0;
 
 static void dirtyCopy(const char* data, int width, int height, int nbytes) {
     const char* framebuffer = server->frameBuffer;
@@ -35,12 +42,19 @@ static void dirtyCopy(const char* data, int width, int height, int nbytes) {
 }
 
 static void callEvent(JNIEnv* env) {
-    jclass callbackClass = env->GetObjectClass(globalKeyboard);
-    jmethodID callbackMethod = env->GetMethodID(callbackClass, "hookKeyPress", "(IZ)V");
-    for(int i=0; i < sizeKey; i++) {
-        env->CallVoidMethod(globalKeyboard, callbackMethod, listEventKey[i].key, listEventKey[i].down);
+    jclass callbackClassKeyboard = env->GetObjectClass(globalKeyboard);
+    jmethodID callbackMethodKeyboard = env->GetMethodID(callbackClassKeyboard, "hookKeyPress", "(IZ)V");
+    for(int i = 0; i < sizeKey; i++) {
+        env->CallVoidMethod(globalKeyboard, callbackMethodKeyboard, listEventKey[i].key, listEventKey[i].down);
     }
     sizeKey = 0;
+
+    jclass callbackClassMouse = env->GetObjectClass(globalMouse);
+    jmethodID callbackMethodMouse = env->GetMethodID(callbackClassMouse, "hookMouse", "(III)V");
+    for(int i = 0; i < sizeMouse; i++) {
+        env->CallVoidMethod(globalMouse, callbackMethodMouse, listEventMouse[i].x, listEventMouse[i].y, listEventMouse[i].mask);
+    }
+    sizeMouse = 0;
 }
 
 static enum rfbNewClientAction newClient(rfbClientPtr cl) {
@@ -63,7 +77,11 @@ static void keyCallback(rfbBool down, rfbKeySym keySym, rfbClientPtr client)
 static void mouseCallback(int buttonMask, int x, int y, rfbClientPtr client)
 {
     (void)(client);
-    std::cout << +buttonMask << " - " << x << " - " << y << std::endl;
+    // std::cout << +buttonMask << " - " << x << " - " << y << std::endl;
+    listEventMouse[sizeMouse].x = x; 
+    listEventMouse[sizeMouse].y = y; 
+    listEventMouse[sizeMouse].mask = buttonMask; 
+    sizeMouse++;
 }
 
 static jboolean hasConnection() {
@@ -154,6 +172,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDi
 extern "C" JNIEXPORT void JNICALL Java_org_microemu_app_Main_initNative(JNIEnv *env, jobject) {
     std::cout << "Hello J2RUN!" << std::endl;
     listEventKey = new EKey[100];
+    listEventMouse = new EMouse[1000];
     int ret;
     if (ret = pthread_create(&thread_id, NULL, &thr_handle, NULL)) {
         return;
