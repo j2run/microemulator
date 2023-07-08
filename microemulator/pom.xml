@@ -115,6 +115,45 @@
                </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>build-native</id>
+                        <phase>compile</phase>
+                        <goals>
+                        <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>g++</executable>
+                            <workingDirectory>${basedir}/src/main/native</workingDirectory>
+                            <arguments>
+                                <argument>-I${java.home}/include</argument>
+                                <argument>-I${java.home}/include/linux</argument>
+                                <argument>-I${basedir}/vnc</argument>
+                                <argument>-shared</argument>
+                                <argument>-fPIC</argument>
+                                <argument>-L${basedir}/vnc</argument>
+                                <argument>-lvncserver</argument>
+                                <argument>-o</argument>
+                                <argument>${project.build.directory}/libnative.so</argument>
+                                <argument>native-lib.cpp</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
