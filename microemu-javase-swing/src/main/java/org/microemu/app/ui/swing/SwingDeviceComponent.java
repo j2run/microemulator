@@ -306,8 +306,8 @@ public class SwingDeviceComponent extends JPanel implements KeyListener {
 
 		// yuh ---
 		// remove canvas show
-		Rectangle r = ((J2SEDeviceDisplay) DeviceFactory.getDevice().getDeviceDisplay()).getDisplayRectangle();
-		add(dc, new XYConstraints(r.x, r.y, -1, -1));
+		// Rectangle r = ((J2SEDeviceDisplay) DeviceFactory.getDevice().getDeviceDisplay()).getDisplayRectangle();
+		// add(dc, new XYConstraints(r.x, r.y, -1, -1));
 
 		revalidate();
 	}

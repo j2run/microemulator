@@ -96,6 +96,7 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 
 	public J2SEDeviceDisplay(EmulatorContext context) {
 		this.context = context;
+		setObject();
 	}
 
 	public MutableImage getDisplayImage() {
@@ -174,10 +175,31 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 	}
 
 	// yuh ---
-	private native boolean drawPixels(byte[] pixcels, int width, int height);
 	// private native boolean drawIntPixels(int[] pixcels, int width, int height);
+	private native boolean drawPixels(byte[] pixcels, int width, int height);
 	private native boolean updateProcess();
+	private native void setObject();
+	private int fps = -1;
+	private int fpsPer = -1;
+	private long fpsTime = 0;
 	private boolean hasConnection = false;
+
+	private void setFps(int fps) {
+		System.out.println("accept!");
+		this.fps = fps;
+		this.fpsPer = 1000 / fps;
+	};
+
+	private boolean canNextVNC() {
+		if (fps < 1) {
+			return true;
+		}
+		if (java.lang.System.currentTimeMillis() - fpsTime > fpsPer) {
+			fpsTime = java.lang.System.currentTimeMillis();
+			return true;
+		}
+		return false;
+	}
 
 	public void paintDisplayable(Graphics g, int x, int y, int width, int height) {
 		MIDletAccess ma = MIDletBridge.getMIDletAccess();
@@ -211,16 +233,21 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		g.setClip(oldclip);
 
 		// yuh ---
-		if (hasConnection) {
+		if (hasConnection && canNextVNC()) {
 			int[] pixels = getDisplayImage().getData();
 			byte[] arr = new byte[pixels.length * 4];
 			int pixel;
 			for (int i = 0; i < pixels.length; i++) {
 				pixel = pixels[i];
-				arr[i * 4 + 0] = (byte)((pixel >> 16) & 0xFF);
-				arr[i * 4 + 1] = (byte)((pixel >> 8) & 0xFF);
-				arr[i * 4 + 2] = (byte)( pixel & 0xFF);
-				arr[i * 4 + 3] = (byte)((pixel >> 24) & 0xFF);
+				// arr[i * 4 + 0] = (byte)((pixel >> 16) & 0xFF);
+				// arr[i * 4 + 1] = (byte)((pixel >> 8) & 0xFF);
+				// arr[i * 4 + 2] = (byte)( pixel & 0xFF);
+				// arr[i * 4 + 3] = (byte)((pixel >> 24) & 0xFF);
+
+				arr[i * 4 + 0] = (byte)((((pixel >> 16) & 0xFF) >> 4) << 4);
+				arr[i * 4 + 1] = (byte)((((pixel >> 8) & 0xFF) >> 4) << 4);
+				arr[i * 4 + 2] = (byte)((( pixel & 0xFF) >> 5) << 5);
+				arr[i * 4 + 3] = (byte)((((pixel >> 24) & 0xFF) >> 5) << 5);
 			}
 			hasConnection = drawPixels(arr, width, height);
 
