@@ -2,11 +2,12 @@
 #include <jni.h>
 #include <rfb/rfb.h>
 #include <pthread.h>
+#include <thread>
 #include <cstdlib>
 #include <chrono>
 
-#define FPS_DEFAULT 25
-#define FPS_LIMIT 7
+#define FPS_DEFAULT -1
+#define FPS_LIMIT -1
 #define FPS_TIME_LIMIT 5000
 #define FPS_NON -1
 #define FPS_EVENT_NON -999
@@ -28,8 +29,7 @@ rfbScreenInfoPtr server;
 int maxx = 1;
 int maxy = 1;
 int bpp = 4;
-char* tmpfb;
-jobject globalKeyboard, globalMouse, globalDisplay;
+jobject globalKeyboard, globalMouse, globalJ2seVnc;
 
 EKey* eventKeyList = nullptr;
 EMouse* eventMouseList = nullptr;
@@ -41,6 +41,9 @@ int sizeMouse = 0;
 
 long long currentFpsTime = 0;
 int currentFps = 0;
+
+JavaVM *globalJvm;
+bool computeSize = true;
 
 static long long getCurrentTimeMs() {
     auto currentTime = std::chrono::system_clock::now();
@@ -75,10 +78,15 @@ static void dirtyCopy(const char* data, int width, int height, int nbytes) {
 
 
 static void callEvent(JNIEnv* env) {
-    bool hasEvent = (sizeKey > 0 || sizeMouse > 0);
+    int bkSizeKey = sizeKey;
+    int bkSizeMouse = sizeMouse;
+    sizeKey = 0;
+    sizeMouse = 0;
+    bool hasEvent = (bkSizeKey > 0 || bkSizeMouse > 0);
     long t = getCurrentTimeMs();
     if (hasEvent) {
         eventFpsTimeLimit = t;
+        std::cout << "event: mouse(" << bkSizeMouse << ") key (" << bkSizeKey << ")" << std::endl;
     }
     if (hasEvent && eventFpsLasted != FPS_DEFAULT) {
         eventFps = FPS_DEFAULT;
@@ -92,25 +100,23 @@ static void callEvent(JNIEnv* env) {
     // event key
     jclass callbackClassKeyboard = env->GetObjectClass(globalKeyboard);
     jmethodID callbackMethodKeyboard = env->GetMethodID(callbackClassKeyboard, "hookKeyPress", "(IZ)V");
-    for(int i = 0; i < sizeKey; i++) {
+    for(int i = 0; i < bkSizeKey; i++) {
         env->CallVoidMethod(globalKeyboard, callbackMethodKeyboard, eventKeyList[i].key, eventKeyList[i].down);
     }
-    sizeKey = 0;
 
     // event mouse
     jclass callbackClassMouse = env->GetObjectClass(globalMouse);
     jmethodID callbackMethodMouse = env->GetMethodID(callbackClassMouse, "hookMouse", "(III)V");
-    for(int i = 0; i < sizeMouse; i++) {
+    for(int i = 0; i < bkSizeMouse; i++) {
         env->CallVoidMethod(globalMouse, callbackMethodMouse, eventMouseList[i].x, eventMouseList[i].y, eventMouseList[i].mask);
     }
-    sizeMouse = 0;
 
     // event fps
     if (eventFps != -999) {
         std::cout << "set fps " << eventFps << std::endl;
-        jclass callbackClassFps = env->GetObjectClass(globalDisplay);
+        jclass callbackClassFps = env->GetObjectClass(globalJ2seVnc);
         jmethodID callbackMethodFps = env->GetMethodID(callbackClassFps, "setFps", "(I)V");
-        env->CallVoidMethod(globalDisplay, callbackMethodFps, eventFps);
+        env->CallVoidMethod(globalJ2seVnc, callbackMethodFps, eventFps);
         eventFpsLasted = eventFps;
         eventFps = -999;
     }
@@ -123,7 +129,9 @@ static void keyCallback(rfbBool down, rfbKeySym keySym, rfbClientPtr client)
 {
     (void)(client);
     // std::cout << keySym << " - " << +down << std::endl;
-    if (keySym > 65000) {
+    if (keySym == 65293) {
+        keySym = 10;
+    } else if (keySym > 65000) {
         keySym -= 65324;
     } else if (keySym >= 97 && keySym <= 122) {
         keySym -= 32;
@@ -153,13 +161,14 @@ static jboolean hasConnection() {
     return false;
 }
 
-extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDisplay_updateProcess(JNIEnv* env, jobject obj) {
+extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_updateProcess(JNIEnv* env, jobject obj) {
     rfbProcessEvents(server, 0);
     return hasConnection();
 }
 
-extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDisplay_drawPixels(JNIEnv* env, jobject obj, jbyteArray pixels, jint width, jint height) {
-    if (width != maxx || height != maxy) {
+extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_drawPixels(JNIEnv* env, jobject obj, jbyteArray pixels, jint width, jint height, jint loopEvent) {
+    if (computeSize) {
+        computeSize = false;
         char* oldfb = server->frameBuffer;
         maxx = width;
         maxy = height;
@@ -168,13 +177,13 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDi
         free(oldfb);
         std::cout << "Change: " << maxx << ":" << maxy  << std::endl;
     }
-
+    
     countFps();
 
     jbyte* pixelData = env->GetByteArrayElements(pixels, NULL);
     char* byteData = (char*)pixelData;
-    dirtyCopy(byteData, width,  height, sizeof(int));
-    while (rfbProcessEvents(server, 0)) {
+    dirtyCopy(byteData, maxx,  maxy, sizeof(int));
+    while (rfbProcessEvents(server, 0) || loopEvent-- > 0) {
     }
     callEvent(env);
 
@@ -183,18 +192,35 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDi
 }
 
 
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* jvm, void* reserved) {
+    globalJvm = jvm;
+    return JNI_VERSION_1_6;
+}
+
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* jvm, void* reserved) {
+    globalJvm = nullptr; 
+}
+
 static void *thr_handle(void *args) 
 {
     pthread_t tid = pthread_self();
     int argc;
     char *agv;
     server = rfbGetScreen(&argc, &agv, maxx, maxy, 8, 3, bpp);
-    tmpfb = (char*)malloc(maxx * maxy * bpp);
-    server->frameBuffer= (char*)malloc(maxx*maxy*bpp);
+    server->frameBuffer = (char*)malloc(maxx * maxy * bpp);
     server->alwaysShared = TRUE;
     server->newClientHook = newClient;
     server->ptrAddEvent = mouseCallback;
     server->kbdAddEvent = keyCallback;
+
+    JNIEnv* env;
+    jint result = globalJvm->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr);
+    if (result != JNI_OK) {
+        std::cerr << "Failed to attach thread to JVM" << std::endl;
+        free(server->frameBuffer);
+        return nullptr;
+    }
+
     rfbInitServer(server);
 }
 
@@ -218,40 +244,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_microemu_app_ui_swing_SwingDisplayCom
     globalMouse = env->NewGlobalRef(obj);
 }
 
-
-extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDisplay_setObject(JNIEnv* env, jobject obj) {
-    std::cout << "setObject display!" << std::endl;
-    globalDisplay = env->NewGlobalRef(obj);
+extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_setObject(JNIEnv* env, jobject obj) {
+    std::cout << "setObject j2se vnc!" << std::endl;
+    globalJ2seVnc = env->NewGlobalRef(obj);
 }
-
-// extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEDeviceDisplay_drawIntPixels(JNIEnv* env, jobject obj, jintArray pixels, jint width, jint height) {
-//     int sizeArr = width * height * bpp;
-//     if (width != maxx || height != maxy) {
-//         char* oldfb = server->frameBuffer;
-//         maxx = width;
-//         maxy = height;
-//         free(tmpfb);
-//         tmpfb = (char*)malloc(sizeArr);
-//         char* newfb = (char*)malloc(sizeArr);
-//         rfbNewFramebuffer(server, (char*)newfb, maxx, maxy, 8, 3, bpp);
-//         free(oldfb);
-//         std::cout << "Change: " << maxx << ":" << maxy  << std::endl;
-//     }
-    
-//     jint* pixelIntData = env->GetIntArrayElements(pixels, NULL);
-//     jsize numElements = env->GetArrayLength(pixels);
-    
-//     int pixel;
-//     for (int i = 0; i < numElements; i++) {
-//         pixel = pixelIntData[i];
-//         tmpfb[i * 4 + 0] = (pixel >> 16) & 0xFF;
-//         tmpfb[i * 4 + 1] = (pixel >> 8) & 0xFF;
-//         tmpfb[i * 4 + 2] = pixel & 0xFF;
-//         tmpfb[i * 4 + 3] = (pixel >> 24) & 0xFF;
-//     }
-
-//     dirtyCopy(tmpfb, width,  height, bpp);
-//     rfbProcessEvents(server, 0);
-//     env->ReleaseIntArrayElements(pixels, pixelIntData, 0);
-//     return hasConnection();
-// }

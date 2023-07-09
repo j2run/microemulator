@@ -342,6 +342,8 @@ public class SwingDeviceComponent extends JPanel implements KeyListener {
 		Device device = DeviceFactory.getDevice();
 		J2SEInputMethod inputMethod = (J2SEInputMethod) device.getInputMethod();
 
+		// System.out.println("ohno");
+		// System.out.println(ev.getKeyCode());
 		if (ev.getKeyCode() == KeyEvent.VK_V && (ev.getModifiers() & KeyEvent.CTRL_MASK) != 0) {
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 			Transferable transferable = clipboard.getContents(null);

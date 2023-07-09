@@ -44,6 +44,9 @@ import javax.microedition.lcdui.Screen;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
+import java.lang.Thread;
+import java.lang.InterruptedException;
+
 import org.microemu.DisplayAccess;
 import org.microemu.DisplayComponent;
 import org.microemu.MIDletAccess;
@@ -62,6 +65,7 @@ import org.microemu.device.j2se.J2SEButton;
 import org.microemu.device.j2se.J2SEDeviceDisplay;
 import org.microemu.device.j2se.J2SEInputMethod;
 import org.microemu.device.j2se.J2SEMutableImage;
+import org.microemu.device.j2se.J2SEVnc;
 
 public class SwingDisplayComponent extends JComponent implements DisplayComponent {
 	private static final long serialVersionUID = 1L;
@@ -264,9 +268,9 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 
 	// yuh ---
 	private native void setObject();
-
 	private boolean isMouseDown = false;
 	private void hookMouse(int x, int y, int mask) {
+		// yuh ---
 		// System.out.println(x);
 		// System.out.println(y);
 		// System.out.println(mask);
@@ -321,6 +325,9 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 		}
 	}
 
+	// yuh ---
+	private Thread thread;
+
 	public void repaintRequest(int x, int y, int width, int height) {
 		MIDletAccess ma = MIDletBridge.getMIDletAccess();
 		if (ma == null) {
@@ -348,8 +355,25 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 
 				synchronized (displayImage) {
 					deviceDisplay.paintDisplayable(displayGraphics, x, y, width, height);
+					// yuh ---
 					if (!deviceDisplay.isFullScreenMode()) {
 						deviceDisplay.paintControls(displayGraphics);
+						thread = new Thread() {
+							@Override
+							public void run() {
+								while (!deviceDisplay.isFullScreenMode()) {
+									synchronized (displayImage) {
+										J2SEVnc.instance.draw(displayImage, 100);
+									}
+									try {
+										Thread.sleep(1000 / 15);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+								}
+							}
+						};
+						thread.start();
 					}
 				}
 
