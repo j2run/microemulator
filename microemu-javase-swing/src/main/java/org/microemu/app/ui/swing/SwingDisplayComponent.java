@@ -363,7 +363,7 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 							public void run() {
 								while (!deviceDisplay.isFullScreenMode()) {
 									synchronized (displayImage) {
-										J2SEVnc.instance.draw(displayImage, 100);
+										J2SEVnc.instance.draw(displayImage, 100, false);
 									}
 									try {
 										Thread.sleep(1000 / 15);

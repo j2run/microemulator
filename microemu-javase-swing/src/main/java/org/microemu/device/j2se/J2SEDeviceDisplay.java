@@ -187,6 +187,11 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 			return;
 		}
 
+		if (!J2SEVnc.instance.isRender()) {
+			J2SEVnc.instance.draw(null, 0, false);
+			return;
+		}
+
 		g.setColor(foregroundColor);
 
 		java.awt.Shape oldclip = g.getClip();
@@ -204,7 +209,7 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		// 	g.translate(-displayPaintable.x, -displayPaintable.y);
 		// }
 		g.setClip(oldclip);
-		J2SEVnc.instance.draw(getDisplayImage(), 0);
+		J2SEVnc.instance.draw(getDisplayImage(), 0, true);
 	}
 
 	public void repaint(int x, int y, int width, int height) {

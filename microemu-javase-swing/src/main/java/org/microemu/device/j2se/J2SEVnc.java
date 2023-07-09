@@ -22,9 +22,9 @@ public class J2SEVnc {
     }
 
     private void setFps(int fps) {
-		System.out.println("accept!");
 		this.fps = fps;
 		this.fpsFrameTime = 1000 / fps;
+		System.out.println("accept!" + fps + " " + this.fpsFrameTime);
 	};
 
 	private boolean canUpNext() {
@@ -38,8 +38,8 @@ public class J2SEVnc {
 		return false;
 	}
 
-    public void draw(MutableImage displayImage, int loopEvent) {
-        if (hasConnection && canUpNext()) {
+    public void draw(MutableImage displayImage, int loopEvent, boolean forceRender) {
+        if (forceRender || (hasConnection && canUpNext())) {
 			int[] pixels = displayImage.getData();
             if (pixels.length != pixels.length * 4) {
                 pixelBytes = new byte[pixels.length * 4];
@@ -64,4 +64,8 @@ public class J2SEVnc {
 			hasConnection = updateProcess();
 		}
     }
+
+	public boolean isRender() {
+		return hasConnection && canUpNext();
+	}
 }

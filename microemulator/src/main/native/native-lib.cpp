@@ -6,8 +6,8 @@
 #include <cstdlib>
 #include <chrono>
 
-#define FPS_DEFAULT -1
-#define FPS_LIMIT -1
+#define FPS_DEFAULT 30
+#define FPS_LIMIT 10
 #define FPS_TIME_LIMIT 5000
 #define FPS_NON -1
 #define FPS_EVENT_NON -999
