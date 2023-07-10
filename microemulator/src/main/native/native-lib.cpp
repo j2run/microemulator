@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <chrono>
 
-#define FPS_DEFAULT 30
+#define FPS_DEFAULT 25
 #define FPS_LIMIT 10
 #define FPS_TIME_LIMIT 5000
 #define FPS_NON -1
@@ -35,7 +35,7 @@ EKey* eventKeyList = nullptr;
 EMouse* eventMouseList = nullptr;
 int eventFps = FPS_EVENT_NON;
 int eventFpsLasted = FPS_NON;
-long eventFpsTimeLimit = 0;
+long long eventFpsTimeLimit = 0;
 int sizeKey = 0;
 int sizeMouse = 0;
 
@@ -44,6 +44,7 @@ int currentFps = 0;
 
 JavaVM *globalJvm;
 bool computeSize = true;
+int countConnection = 0;
 
 static long long getCurrentTimeMs() {
     auto currentTime = std::chrono::system_clock::now();
@@ -83,32 +84,37 @@ static void callEvent(JNIEnv* env) {
     sizeKey = 0;
     sizeMouse = 0;
     bool hasEvent = (bkSizeKey > 0 || bkSizeMouse > 0);
-    long t = getCurrentTimeMs();
+    long long currentTime = getCurrentTimeMs();
     if (hasEvent) {
-        eventFpsTimeLimit = t;
-        std::cout << "event: mouse(" << bkSizeMouse << ") key (" << bkSizeKey << ")" << std::endl;
+        eventFpsTimeLimit = currentTime;
+        // std::cout << "event: mouse(" << bkSizeMouse << ") key (" << bkSizeKey << ")" << std::endl;
     }
     if (hasEvent && eventFpsLasted != FPS_DEFAULT) {
         eventFps = FPS_DEFAULT;
         std::cout << "auto default fps " << eventFps << std::endl;
     }
-    if (!hasEvent && t - eventFpsTimeLimit > FPS_TIME_LIMIT && eventFpsLasted != FPS_LIMIT) {
+    if (!hasEvent && currentTime - eventFpsTimeLimit > FPS_TIME_LIMIT && eventFpsLasted != FPS_LIMIT) {
         eventFps = FPS_LIMIT;
         std::cout << "auto limit fps " << eventFps << std::endl;
     }
 
     // event key
-    jclass callbackClassKeyboard = env->GetObjectClass(globalKeyboard);
-    jmethodID callbackMethodKeyboard = env->GetMethodID(callbackClassKeyboard, "hookKeyPress", "(IZ)V");
-    for(int i = 0; i < bkSizeKey; i++) {
-        env->CallVoidMethod(globalKeyboard, callbackMethodKeyboard, eventKeyList[i].key, eventKeyList[i].down);
+    if (bkSizeKey > 0) {
+        jclass callbackClassKeyboard = env->GetObjectClass(globalKeyboard);
+        jmethodID callbackMethodKeyboard = env->GetMethodID(callbackClassKeyboard, "hookKeyPress", "(IZ)V");
+        for(int i = 0; i < bkSizeKey; i++) {
+            env->CallVoidMethod(globalKeyboard, callbackMethodKeyboard, eventKeyList[i].key, eventKeyList[i].down);
+        }
     }
 
+
     // event mouse
-    jclass callbackClassMouse = env->GetObjectClass(globalMouse);
-    jmethodID callbackMethodMouse = env->GetMethodID(callbackClassMouse, "hookMouse", "(III)V");
-    for(int i = 0; i < bkSizeMouse; i++) {
-        env->CallVoidMethod(globalMouse, callbackMethodMouse, eventMouseList[i].x, eventMouseList[i].y, eventMouseList[i].mask);
+    if (bkSizeMouse > 0) {
+        jclass callbackClassMouse = env->GetObjectClass(globalMouse);
+        jmethodID callbackMethodMouse = env->GetMethodID(callbackClassMouse, "hookMouse", "(III)V");
+        for(int i = 0; i < bkSizeMouse; i++) {
+            env->CallVoidMethod(globalMouse, callbackMethodMouse, eventMouseList[i].x, eventMouseList[i].y, eventMouseList[i].mask);
+        }
     }
 
     // event fps
@@ -122,19 +128,34 @@ static void callEvent(JNIEnv* env) {
     }
 }
 
+
+static void clientgone(rfbClientPtr cl)
+{
+    countConnection--;
+}
+
 static enum rfbNewClientAction newClient(rfbClientPtr cl) {
+    cl->clientGoneHook = clientgone;
+    countConnection++;
+    return RFB_CLIENT_ACCEPT;
 }
 
 static void keyCallback(rfbBool down, rfbKeySym keySym, rfbClientPtr client)
 {
     (void)(client);
     // std::cout << keySym << " - " << +down << std::endl;
-    if (keySym == 65293) {
-        keySym = 10;
-    } else if (keySym > 65000) {
+    if (keySym >= 65456 && keySym <= 65465) {
+        // 0 - 96 - 65456 -> 9 - 105 - 65465
+        keySym -= 65360;
+    } else if (keySym >= 65361 && keySym <= 65364) {
+        // char
         keySym -= 65324;
-    } else if (keySym >= 97 && keySym <= 122) {
-        keySym -= 32;
+    } else if (keySym == 65293) {
+        // enter
+        keySym = 10;
+    } else if (keySym == 65288) {
+        // backspace - 8 - 65288
+        keySym = 8;
     }
     eventKeyList[sizeKey].key = keySym; 
     eventKeyList[sizeKey].down = down; 
@@ -163,7 +184,7 @@ static jboolean hasConnection() {
 
 extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_updateProcess(JNIEnv* env, jobject obj) {
     rfbProcessEvents(server, 0);
-    return hasConnection();
+    return countConnection != 0;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_drawPixels(JNIEnv* env, jobject obj, jbyteArray pixels, jint width, jint height, jint loopEvent) {
@@ -178,7 +199,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_draw
         std::cout << "Change: " << maxx << ":" << maxy  << std::endl;
     }
     
-    countFps();
+    // countFps();
 
     jbyte* pixelData = env->GetByteArrayElements(pixels, NULL);
     char* byteData = (char*)pixelData;
@@ -188,7 +209,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_draw
     callEvent(env);
 
     env->ReleaseByteArrayElements(pixels, pixelData, 0);
-    return hasConnection();
+    return countConnection != 0;
 }
 
 

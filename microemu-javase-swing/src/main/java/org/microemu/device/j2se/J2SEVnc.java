@@ -13,7 +13,10 @@ public class J2SEVnc {
 	private int fpsFrameTime = -1;
 	private long fpsTime = 0;
 	private boolean hasConnection = false;
+
     private byte[] pixelBytes = new byte[0];
+	private int width;
+	private int height;
 
     public static J2SEVnc instance = new J2SEVnc();
 
@@ -27,7 +30,7 @@ public class J2SEVnc {
 		System.out.println("accept!" + fps + " " + this.fpsFrameTime);
 	};
 
-	private boolean canUpNext() {
+	private boolean canNextFrame() {
 		if (fps < 1) {
 			return true;
 		}
@@ -39,14 +42,14 @@ public class J2SEVnc {
 	}
 
     public void draw(MutableImage displayImage, int loopEvent, boolean forceRender) {
-        if (forceRender || (hasConnection && canUpNext())) {
+        if (displayImage != null && (forceRender || (hasConnection && canNextFrame()))) {
 			int[] pixels = displayImage.getData();
-            if (pixels.length != pixels.length * 4) {
-                pixelBytes = new byte[pixels.length * 4];
-            }
+			if (pixelBytes.length != pixels.length * 4) {
+				pixelBytes = new byte[pixels.length * 4];
+				width = displayImage.getWidth();
+				height = displayImage.getHeight();
+			}
 			int pixel;
-            int width = displayImage.getWidth();
-            int height = displayImage.getHeight();
 			for (int i = 0; i < pixels.length; i++) {
 				pixel = pixels[i];
 				// pixelBytes[i * 4 + 0] = (byte)((pixel >> 16) & 0xFF);
@@ -66,6 +69,6 @@ public class J2SEVnc {
     }
 
 	public boolean isRender() {
-		return hasConnection && canUpNext();
+		return hasConnection && canNextFrame();
 	}
 }

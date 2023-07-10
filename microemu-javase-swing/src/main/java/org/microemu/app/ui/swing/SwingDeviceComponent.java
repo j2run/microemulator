@@ -287,7 +287,31 @@ public class SwingDeviceComponent extends JPanel implements KeyListener {
 		// System.out.println(keycode);
 		// System.out.println(down);
 
-		KeyEvent keyEvent = new KeyEvent(this, 0, System.currentTimeMillis(), 0, keycode, KeyEvent.CHAR_UNDEFINED);
+		// a - 65 -> z - 90 (char)
+		char c = (keycode >= 65 && keycode <= 90) || (keycode >= 97 && keycode <= 122)
+			? (char) (keycode)
+			: KeyEvent.CHAR_UNDEFINED;
+
+		if (keycode >= 97 && keycode <= 122) {
+			keycode -= 32;
+		}
+
+	    // 0 - 48 -> 9 - 57 (number)
+		if (keycode >= 48 && keycode <= 57) {
+			c = (char) (keycode - 48 + '0');
+		}
+
+	    // 0 - 96 -> 9 - 105 (number)
+		if (keycode >= 96 && keycode <= 105) {
+			c = (char) (keycode - 96 + '0');
+		}
+
+		// backspace 32 - ' '
+		if (keycode == 32) {
+			c = ' ';
+		}
+
+		KeyEvent keyEvent = new KeyEvent(this, 0, System.currentTimeMillis(), 0, keycode, c);
 		if (down) {
 			keyPressed(keyEvent);
 		} else {
@@ -306,8 +330,8 @@ public class SwingDeviceComponent extends JPanel implements KeyListener {
 
 		// yuh ---
 		// remove canvas show
-		// Rectangle r = ((J2SEDeviceDisplay) DeviceFactory.getDevice().getDeviceDisplay()).getDisplayRectangle();
-		// add(dc, new XYConstraints(r.x, r.y, -1, -1));
+		Rectangle r = ((J2SEDeviceDisplay) DeviceFactory.getDevice().getDeviceDisplay()).getDisplayRectangle();
+		add(dc, new XYConstraints(r.x, r.y, -1, -1));
 
 		revalidate();
 	}
@@ -342,8 +366,6 @@ public class SwingDeviceComponent extends JPanel implements KeyListener {
 		Device device = DeviceFactory.getDevice();
 		J2SEInputMethod inputMethod = (J2SEInputMethod) device.getInputMethod();
 
-		// System.out.println("ohno");
-		// System.out.println(ev.getKeyCode());
 		if (ev.getKeyCode() == KeyEvent.VK_V && (ev.getModifiers() & KeyEvent.CTRL_MASK) != 0) {
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 			Transferable transferable = clipboard.getContents(null);
@@ -397,6 +419,11 @@ public class SwingDeviceComponent extends JPanel implements KeyListener {
 		} else {
 			// Logger.debug0x("no button for KeyCode", ev.getKeyCode());
 		}
+
+		// System.out.println("ohno");
+		// System.out.println(ev.getKeyCode());
+		// System.out.println(ev.getKeyChar());
+		// System.out.println(ev.getModifiers());
 		inputMethod.buttonPressed(button, keyChar);
 	}
 

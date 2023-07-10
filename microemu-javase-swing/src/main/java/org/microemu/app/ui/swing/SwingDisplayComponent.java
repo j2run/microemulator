@@ -358,22 +358,26 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 					// yuh ---
 					if (!deviceDisplay.isFullScreenMode()) {
 						deviceDisplay.paintControls(displayGraphics);
-						thread = new Thread() {
-							@Override
-							public void run() {
-								while (!deviceDisplay.isFullScreenMode()) {
-									synchronized (displayImage) {
-										J2SEVnc.instance.draw(displayImage, 100, false);
-									}
-									try {
-										Thread.sleep(1000 / 15);
-									} catch (InterruptedException e) {
-										e.printStackTrace();
+						if (thread == null) {
+							thread = new Thread() {
+								@Override
+								public void run() {
+									while (!deviceDisplay.isFullScreenMode()) {
+										synchronized (displayImage) {
+											J2SEVnc.instance.draw(displayImage, 20, true);
+										}
+										try {
+											Thread.sleep(1000 / 15);
+										} catch (InterruptedException e) {
+											e.printStackTrace();
+										}
 									}
 								}
-							}
-						};
-						thread.start();
+							};
+							thread.start();
+						}
+					} else {
+						thread = null;
 					}
 				}
 

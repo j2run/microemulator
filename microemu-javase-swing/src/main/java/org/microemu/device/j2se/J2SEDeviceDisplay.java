@@ -209,7 +209,7 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		// 	g.translate(-displayPaintable.x, -displayPaintable.y);
 		// }
 		g.setClip(oldclip);
-		J2SEVnc.instance.draw(getDisplayImage(), 0, true);
+		J2SEVnc.instance.draw(getDisplayImage(), 10, true);
 	}
 
 	public void repaint(int x, int y, int width, int height) {
