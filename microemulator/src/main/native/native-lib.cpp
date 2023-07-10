@@ -183,6 +183,7 @@ static jboolean hasConnection() {
 }
 
 extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_updateProcess(JNIEnv* env, jobject obj) {
+    countFps();
     rfbProcessEvents(server, 0);
     return countConnection != 0;
 }
