@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <chrono>
 
-#define FPS_DEFAULT 25
+#define FPS_DEFAULT -1
 #define FPS_LIMIT 10
 #define FPS_TIME_LIMIT 5000
 #define FPS_NON -1
@@ -45,6 +45,7 @@ int currentFps = 0;
 JavaVM *globalJvm;
 bool computeSize = true;
 int countConnection = 0;
+
 
 static long long getCurrentTimeMs() {
     auto currentTime = std::chrono::system_clock::now();
@@ -223,6 +224,14 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* jvm, void* reserved) {
     globalJvm = nullptr; 
 }
 
+static rfbBool rfbDefaultPasswordCheck(rfbClientPtr cl,const char* response,int len)
+{
+  std::cout << cl->authChallenge << std::endl;
+  std::cout << response << std::endl;
+
+  return(FALSE);
+}
+
 static void *thr_handle(void *args) 
 {
     pthread_t tid = pthread_self();
@@ -234,6 +243,17 @@ static void *thr_handle(void *args)
     server->newClientHook = newClient;
     server->ptrAddEvent = mouseCallback;
     server->kbdAddEvent = keyCallback;
+
+    // rfbEncryptAndStorePasswd((char *)"123", (char *)"/home/yuh/wtf.pw");
+    // server->authPasswdData = (char *)"/home/yuh/wtf.pw";
+    // server->passwordCheck = rfbDefaultPasswordCheck;
+
+    // char **passwordList = (char**) malloc(sizeof(char **) * 2);
+    // const char cPassword[] = "12345678";
+    // passwordList[0] = strdup(cPassword);
+    // passwordList[1] = NULL;
+    // server->authPasswdData = (void *) passwordList;
+    // server->passwordCheck = rfbCheckPasswordByList;
 
     JNIEnv* env;
     jint result = globalJvm->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr);
