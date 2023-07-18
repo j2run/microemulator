@@ -138,8 +138,10 @@
                             <executable>g++</executable>
                             <workingDirectory>${basedir}/src/main/native</workingDirectory>
                             <arguments>
-                                <argument>-I${java.home}/include</argument>
-                                <argument>-I${java.home}/include/linux</argument>
+                                <!-- <argument>-I${java.home}/include</argument> -->
+                                <!-- <argument>-I${java.home}/include/linux</argument> -->
+                                <argument>-I/usr/lib/jvm/java-8-openjdk/include</argument>
+                                <argument>-I/usr/lib/jvm/java-8-openjdk/include/linux</argument>
                                 <argument>-I${basedir}/vnc</argument>
                                 <argument>-shared</argument>
                                 <argument>-fPIC</argument>

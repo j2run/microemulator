@@ -121,6 +121,7 @@ import org.microemu.util.JadMidletEntry;
 public class Main extends JFrame {
 	// yuh ---
 	static {
+        System.loadLibrary("vncserver");
         System.loadLibrary("native");
     }
 

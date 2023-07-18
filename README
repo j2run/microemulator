@@ -4,3 +4,20 @@ mvn -Dmaven.test.skip=true -Dmaven.compiler.executable='/home/yuh/jdk8/bin/javac
 
 export LD_PRELOAD='/home/yuh/Project/j2run/microemulator/microemulator/target/libvncserver.so'
 java -jar -Djava.library.path=. microemulator-2.0.4.jar -jar '/home/yuh/microemulator-2.0.4/NRO HADES v2.3.0.jar'
+
+# create alpine build
+apk add openjdk8
+apk add maven
+apk add build-base
+apk add zlib-dev
+adduser -D -u 1000 yuh
+chown -R yuh:yuh /data
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk/
+mvn eclipse:clean eclipse:eclipse -DdownloadSources=true 
+mvn -Dmaven.test.skip=true
+
+export LD_PRELOAD=/data/microemulator/vnc/libvncserver.so
+java -jar -Djava.library.path=microemulator/target microemulator/target/microemulator-2.0.4.jar -jar test-j2me.jar
+
+# build cmake
+apk add cmake

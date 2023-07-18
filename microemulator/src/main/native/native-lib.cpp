@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <chrono>
 
-#define FPS_DEFAULT -1
+#define FPS_DEFAULT 25
 #define FPS_LIMIT 10
 #define FPS_TIME_LIMIT 5000
 #define FPS_NON -1
@@ -244,9 +244,8 @@ static void *thr_handle(void *args)
     server->ptrAddEvent = mouseCallback;
     server->kbdAddEvent = keyCallback;
 
-    // rfbEncryptAndStorePasswd((char *)"123", (char *)"/home/yuh/wtf.pw");
-    // server->authPasswdData = (char *)"/home/yuh/wtf.pw";
-    // server->passwordCheck = rfbDefaultPasswordCheck;
+    server->authPasswdData = (char *)"/data/password";
+    server->passwordCheck = rfbDefaultPasswordCheck;
 
     // char **passwordList = (char**) malloc(sizeof(char **) * 2);
     // const char cPassword[] = "12345678";
