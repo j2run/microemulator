@@ -224,14 +224,6 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* jvm, void* reserved) {
     globalJvm = nullptr; 
 }
 
-static rfbBool rfbDefaultPasswordCheck(rfbClientPtr cl,const char* response,int len)
-{
-  std::cout << cl->authChallenge << std::endl;
-  std::cout << response << std::endl;
-
-  return(FALSE);
-}
-
 static void *thr_handle(void *args) 
 {
     pthread_t tid = pthread_self();
@@ -245,7 +237,6 @@ static void *thr_handle(void *args)
     server->kbdAddEvent = keyCallback;
 
     server->authPasswdData = (char *)"/data/password";
-    server->passwordCheck = rfbDefaultPasswordCheck;
 
     // char **passwordList = (char**) malloc(sizeof(char **) * 2);
     // const char cPassword[] = "12345678";
