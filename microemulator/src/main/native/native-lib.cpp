@@ -238,13 +238,6 @@ static void *thr_handle(void *args)
 
     server->authPasswdData = (char *)"/data/password";
 
-    // char **passwordList = (char**) malloc(sizeof(char **) * 2);
-    // const char cPassword[] = "12345678";
-    // passwordList[0] = strdup(cPassword);
-    // passwordList[1] = NULL;
-    // server->authPasswdData = (void *) passwordList;
-    // server->passwordCheck = rfbCheckPasswordByList;
-
     JNIEnv* env;
     jint result = globalJvm->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr);
     if (result != JNI_OK) {

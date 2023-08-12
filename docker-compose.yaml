@@ -1,0 +1,15 @@
+version: '3.8'
+  
+services:
+  j2-build:
+    image: j2-build
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+      args:
+        - gUser=yuh
+        - gId=1000
+    ports:
+      - "5900:5900"
+    volumes:
+      - ./:/data/app

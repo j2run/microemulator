@@ -1,0 +1,19 @@
+<config>
+	<files>
+		<recent maxCapacity="10"/>
+	</files>
+	<system-properties>
+		<system-property name="microedition.configuration" value="CLDC-1.0"/>
+		<system-property name="microedition.profiles" value="MIDP-2.0"/>
+		<system-property name="avetana.forceNativeLibrary" value="true"/>
+        <system-property NAME="microemu.menu" VALUE="false" />
+        <system-property NAME="microemu.fileOption" VALUE="false" />
+	</system-properties>
+    <devices>
+		<device>
+			<name>Resizable device</name>
+			<filename/>
+			<descriptor>org/microemu/device/resizable/device.xml</descriptor>
+		</device>
+    </devices>
+</config>
