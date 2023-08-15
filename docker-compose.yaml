@@ -13,3 +13,4 @@ services:
       - "5900:5900"
     volumes:
       - ./:/data/app
+      - ./.m2:/home/yuh/.m2

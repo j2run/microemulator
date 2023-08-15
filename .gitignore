@@ -4,3 +4,6 @@
 **/*/.project
 **/.project
 /vnc
+/.m2
+supervisord.log
+supervisord.pid
