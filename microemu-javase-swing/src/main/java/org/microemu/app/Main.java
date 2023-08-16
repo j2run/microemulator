@@ -114,6 +114,7 @@ import org.microemu.device.j2se.J2SEDeviceDisplay;
 import org.microemu.device.j2se.J2SEFontManager;
 import org.microemu.device.j2se.J2SEInputMethod;
 import org.microemu.device.j2se.J2SEMutableImage;
+import org.microemu.device.j2se.J2SEVnc;
 import org.microemu.log.Logger;
 import org.microemu.log.QueueAppender;
 import org.microemu.util.JadMidletEntry;
@@ -777,6 +778,7 @@ public class Main extends JFrame {
 		this(null);
 		// yuh ---
 		initNative();
+		J2SEVnc.instance.createThreadChill();
 	}
 
 	public Main(DeviceEntry defaultDevice) {

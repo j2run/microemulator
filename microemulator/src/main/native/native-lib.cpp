@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <chrono>
 
-#define FPS_DEFAULT 25
+#define FPS_DEFAULT 15
 #define FPS_LIMIT 10
 #define FPS_TIME_LIMIT 5000
 #define FPS_NON -1
@@ -111,11 +111,15 @@ static void callEvent(JNIEnv* env) {
 
     // event mouse
     if (bkSizeMouse > 0) {
+        std::cout << "start mouse" << std::endl;
+        std::cout << "mouse " << bkSizeMouse << std::endl;
         jclass callbackClassMouse = env->GetObjectClass(globalMouse);
         jmethodID callbackMethodMouse = env->GetMethodID(callbackClassMouse, "hookMouse", "(III)V");
         for(int i = 0; i < bkSizeMouse; i++) {
+            // std::cout << "mouse " << eventMouseList[i].x << ":" << eventMouseList[i].y << std::endl;
             env->CallVoidMethod(globalMouse, callbackMethodMouse, eventMouseList[i].x, eventMouseList[i].y, eventMouseList[i].mask);
         }
+        std::cout << "end mouse" << std::endl;
     }
 
     // event fps
@@ -183,8 +187,14 @@ static jboolean hasConnection() {
     return false;
 }
 
+extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_updateProcessV2(JNIEnv* env, jobject obj, jint loopEvent) {
+    while (rfbProcessEvents(server, 0) || loopEvent-- > 0) {
+    }
+    callEvent(env);
+    return countConnection != 0;
+}
+
 extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_updateProcess(JNIEnv* env, jobject obj) {
-    countFps();
     rfbProcessEvents(server, 0);
     return countConnection != 0;
 }
@@ -201,7 +211,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_microemu_device_j2se_J2SEVnc_draw
         std::cout << "Change: " << maxx << ":" << maxy  << std::endl;
     }
     
-    // countFps();
+    countFps();
 
     jbyte* pixelData = env->GetByteArrayElements(pixels, NULL);
     char* byteData = (char*)pixelData;

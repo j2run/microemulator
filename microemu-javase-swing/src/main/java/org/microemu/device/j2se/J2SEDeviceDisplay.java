@@ -96,6 +96,7 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 
 	public J2SEDeviceDisplay(EmulatorContext context) {
 		this.context = context;
+		J2SEVnc.instance.setDevice(this);
 	}
 
 	public MutableImage getDisplayImage() {
@@ -209,8 +210,7 @@ public class J2SEDeviceDisplay implements DeviceDisplayImpl {
 		// 	g.translate(-displayPaintable.x, -displayPaintable.y);
 		// }
 		g.setClip(oldclip);
-		// J2SEVnc.instance.draw(getDisplayImage(), 10, true);
-		J2SEVnc.instance.draw(getDisplayImage(), 10, false);
+		J2SEVnc.instance.draw(getDisplayImage());
 	}
 
 	public void repaint(int x, int y, int width, int height) {

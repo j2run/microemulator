@@ -276,11 +276,14 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 		// System.out.println(mask);
 
 		MouseEvent mouseEvent = new MouseEvent(this, 0, 0, 0, x, y, 0, false, mask);
+
 		if (mask > 0) {
 			isMouseDown = true;
+			// System.out.println("wtf press " + String.valueOf(x) + ":" + String.valueOf(y));
 			mouseListener.mousePressed(mouseEvent);
 		} else {
 			if (isMouseDown) {
+				// System.out.println("wtf released " + String.valueOf(x) + ":" + String.valueOf(y));
 				mouseListener.mouseReleased(mouseEvent);
 				isMouseDown = false;
 			}
@@ -325,9 +328,6 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 		}
 	}
 
-	// yuh ---
-	private Thread thread;
-
 	public void repaintRequest(int x, int y, int width, int height) {
 		MIDletAccess ma = MIDletBridge.getMIDletAccess();
 		if (ma == null) {
@@ -355,29 +355,8 @@ public class SwingDisplayComponent extends JComponent implements DisplayComponen
 
 				synchronized (displayImage) {
 					deviceDisplay.paintDisplayable(displayGraphics, x, y, width, height);
-					// yuh ---
 					if (!deviceDisplay.isFullScreenMode()) {
 						deviceDisplay.paintControls(displayGraphics);
-						if (thread == null) {
-							thread = new Thread() {
-								@Override
-								public void run() {
-									while (!deviceDisplay.isFullScreenMode()) {
-										synchronized (displayImage) {
-											J2SEVnc.instance.draw(displayImage, 20, true);
-										}
-										try {
-											Thread.sleep(1000 / 15);
-										} catch (InterruptedException e) {
-											e.printStackTrace();
-										}
-									}
-								}
-							};
-							thread.start();
-						}
-					} else {
-						thread = null;
 					}
 				}
 
