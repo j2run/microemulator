@@ -48,8 +48,10 @@ public class J2SEVnc {
 							byte[] pixels = null;
 							if (hasUpdated) {
 								// System.out.println("render");
-								hasConnection = drawPixels(pixelBytes, width, height, 1);
-								hasUpdated = false;
+								synchronized (pixelBytes) {
+									hasConnection = drawPixels(pixelBytes, width, height, 1);
+									hasUpdated = false;
+								}
 							} else {
 								// System.out.println("render - no");
 								if (java.lang.System.currentTimeMillis() - fpsTime > fpsFrameTime * 2) {
@@ -107,16 +109,19 @@ public class J2SEVnc {
 				width = displayImage.getWidth();
 				height = displayImage.getHeight();
 			}
-			int pixel;
-			for (int i = 0; i < pixels.length; i++) {
-				pixel = pixels[i];
-				pixelBytes[i * 4 + 0] = (byte)((((pixel >> 16) & 0xFF) >> 4) << 4);
-				pixelBytes[i * 4 + 1] = (byte)((((pixel >> 8) & 0xFF) >> 4) << 4);
-				pixelBytes[i * 4 + 2] = (byte)((( pixel & 0xFF) >> 5) << 5);
-				pixelBytes[i * 4 + 3] = (byte)((((pixel >> 24) & 0xFF) >> 5) << 5);
+			
+			synchronized (pixelBytes) {
+				int pixel;
+				for (int i = 0; i < pixels.length; i++) {
+					pixel = pixels[i];
+					pixelBytes[i * 4 + 0] = (byte)((((pixel >> 16) & 0xFF) >> 4) << 4);
+					pixelBytes[i * 4 + 1] = (byte)((((pixel >> 8) & 0xFF) >> 4) << 4);
+					pixelBytes[i * 4 + 2] = (byte)((( pixel & 0xFF) >> 5) << 5);
+					pixelBytes[i * 4 + 3] = (byte)((((pixel >> 24) & 0xFF) >> 5) << 5);
+				}
+				// System.out.println("push frame");
+				hasUpdated = true;
 			}
-			// System.out.println("push frame");
-			hasUpdated = true;
 		}
     }
 
