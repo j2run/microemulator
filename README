@@ -21,3 +21,8 @@ java -jar -Djava.library.path=microemulator/target microemulator/target/microemu
 
 # build cmake
 apk add cmake
+
+mkdir build
+cd build
+cmake ..
+cmake --build .
